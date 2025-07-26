@@ -507,11 +507,6 @@
             border: 2px solid rgba(244, 67, 54, 0.3);
         }
 
-        .ratio-cell {
-            font-weight: 700;
-            color: #333;
-        }
-
         .target-cell {
             font-weight: 600;
             color: #2196F3;
@@ -520,11 +515,6 @@
         .margin-cell {
             font-weight: 600;
             color: #FF9800;
-        }
-
-        .investment-cell {
-            font-weight: 600;
-            color: #17a2b8;
         }
 
         .available-cell {
@@ -663,23 +653,18 @@
                 </div>
                 
                 <div class="input-group">
-                    <label for="ratioInput">Ratio:</label>
-                    <input type="text" id="ratioInput" placeholder="P/E, P/B, etc..." />
-                </div>
-                
-                <div class="input-group">
                     <label for="currentInput">Current Price:</label>
-                    <input type="number" id="currentInput" placeholder="0.00" step="0.01" oninput="updateTargetCalculation(); calculatePercentageChange()" />
+                    <input type="number" id="currentInput" placeholder="0.00" step="0.01" oninput="calculatePercentageChange()" />
                 </div>
                 
                 <div class="input-group">
                     <label for="targetInput">Target:</label>
-                    <input type="number" id="targetInput" class="target-input" placeholder="Auto-calculated" oninput="calculatePercentageChange()" />
+                    <input type="number" id="targetInput" class="target-input" placeholder="Enter target price" oninput="calculatePercentageChange()" />
                 </div>
                 
                 <div class="input-group">
                     <label for="marginSelect">Margin Ratio:</label>
-                    <select id="marginSelect" class="margin-select">
+                    <select id="marginSelect" class="margin-select" onchange="calculateAvailable()">
                         <option value="20">20%</option>
                         <option value="25">25%</option>
                         <option value="30">30%</option>
@@ -689,7 +674,7 @@
                 
                 <div class="input-group">
                     <label for="investmentInput">Investment Amount:</label>
-                    <input type="text" id="investmentInput" class="investment-input" placeholder="0" />
+                    <input type="text" id="investmentInput" class="investment-input" placeholder="0" oninput="calculateAvailable()" />
                 </div>
                 
                 <div class="input-group">
@@ -714,7 +699,6 @@
             <div class="sort-controls">
                 <span style="font-weight: 600; color: #555;">Sort by:</span>
                 <button class="sort-btn" onclick="sortBy('stock')" id="sortStock">Stock ↕</button>
-                <button class="sort-btn" onclick="sortBy('ratio')" id="sortRatio">Ratio ↕</button>
                 <button class="sort-btn" onclick="sortBy('percentage')" id="sortPercentage">% Change ↕</button>
                 <button class="sort-btn" onclick="sortBy('available')" id="sortAvailable">Available ↕</button>
             </div>
@@ -729,12 +713,10 @@
                     <tr>
                         <th>Date & Time</th>
                         <th>Stock</th>
-                        <th>Ratio</th>
                         <th>Current</th>
                         <th>Target</th>
                         <th>% Change</th>
                         <th>Margin</th>
-                        <th>Investment</th>
                         <th>Available</th>
                         <th>Action</th>
                     </tr>
@@ -885,3 +867,360 @@
 
         function toggleStockManager() {
             const manager = document.getElementById('stockManager');
+            if (manager.style.display === 'none') {
+                manager.style.display = 'block';
+                updateStockManager();
+            } else {
+                manager.style.display = 'none';
+            }
+        }
+
+        function updateStockManager() {
+            const container = document.getElementById('stockItems');
+            container.innerHTML = '';
+
+            stockOptions.forEach(stock => {
+                const item = document.createElement('div');
+                item.className = 'dropdown-item';
+                item.innerHTML = `
+                    <span>${stock}</span>
+                    <button class="remove-item-btn" onclick="removeStock('${stock}')" title="Remove ${stock}">×</button>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function removeStock(stockToRemove) {
+            if (confirm(`Are you sure you want to remove "${stockToRemove}" from the stock list?`)) {
+                stockOptions = stockOptions.filter(stock => stock !== stockToRemove);
+                updateStockDropdown();
+                updateStockManager();
+                
+                const select = document.getElementById('stockSelect');
+                if (select.value === stockToRemove) {
+                    select.value = '';
+                }
+                
+                showStatus(`Stock "${stockToRemove}" removed successfully!`, 'success');
+            }
+        }
+
+        function updateStockDropdown() {
+            const select = document.getElementById('stockSelect');
+            const customOption = select.querySelector('option[value="CUSTOM"]');
+            
+            const existingOptions = select.querySelectorAll('option:not([value=""]):not([value="CUSTOM"])');
+            existingOptions.forEach(option => option.remove());
+            
+            stockOptions.forEach(stock => {
+                const option = document.createElement('option');
+                option.value = stock;
+                option.textContent = stock;
+                select.insertBefore(option, customOption);
+            });
+        }
+
+        // Calculation Functions
+        function calculatePercentageChange() {
+            const currentPrice = parseFloat(document.getElementById('currentInput').value) || 0;
+            const targetPrice = parseFloat(document.getElementById('targetInput').value) || 0;
+            const percentageInput = document.getElementById('percentageInput');
+
+            if (currentPrice > 0 && targetPrice > 0) {
+                const percentageChange = ((targetPrice - currentPrice) / currentPrice) * 100;
+                percentageInput.value = percentageChange.toFixed(2);
+                
+                if (percentageChange > 0) {
+                    percentageInput.style.color = '#28a745';
+                    percentageInput.style.fontWeight = '600';
+                } else if (percentageChange < 0) {
+                    percentageInput.style.color = '#dc3545';
+                    percentageInput.style.fontWeight = '600';
+                } else {
+                    percentageInput.style.color = '#333';
+                    percentageInput.style.fontWeight = 'normal';
+                }
+            } else {
+                percentageInput.value = '';
+                percentageInput.style.color = '#333';
+                percentageInput.style.fontWeight = 'normal';
+            }
+        }
+
+        function calculateAvailable() {
+            const investmentAmount = parseInvestmentInput(document.getElementById('investmentInput').value);
+            const marginRatio = parseFloat(document.getElementById('marginSelect').value);
+            
+            // New calculation: investment amount + (investment amount * (1 - margin ratio))
+            if (investmentAmount > 0 && marginRatio > 0) {
+                const marginDecimal = marginRatio / 100;
+                const availableAmount = investmentAmount + (investmentAmount * (1 - marginDecimal));
+                // Store the calculated available amount for later use
+                document.getElementById('investmentInput').setAttribute('data-available', availableAmount.toFixed(2));
+            } else {
+                document.getElementById('investmentInput').setAttribute('data-available', '0');
+            }
+        }
+
+        // Notes Management Functions
+        function addNote() {
+            const stockSelect = document.getElementById('stockSelect');
+            const currentInput = document.getElementById('currentInput');
+            const targetInput = document.getElementById('targetInput');
+            const marginSelect = document.getElementById('marginSelect');
+            const investmentInput = document.getElementById('investmentInput');
+            const percentageInput = document.getElementById('percentageInput');
+            
+            const stockText = stockSelect.value;
+            const currentPrice = parseFloat(currentInput.value) || 0;
+            const targetPrice = parseFloat(targetInput.value) || 0;
+            const marginRatio = parseInt(marginSelect.value);
+            const investmentAmount = parseInvestmentInput(investmentInput.value);
+            const percentage = parseFloat(percentageInput.value) || 0;
+            
+            if (!stockText || stockText === 'CUSTOM') {
+                showStatus('Please select a valid stock!', 'error');
+                return;
+            }
+
+            if (currentPrice <= 0) {
+                showStatus('Please enter a valid current price!', 'error');
+                return;
+            }
+
+            if (targetPrice <= 0) {
+                showStatus('Please enter a valid target price!', 'error');
+                return;
+            }
+
+            if (investmentAmount <= 0) {
+                showStatus('Please enter a valid investment amount!', 'error');
+                return;
+            }
+
+            // Calculate available using the new formula
+            const marginDecimal = marginRatio / 100;
+            const availableToInvest = investmentAmount + (investmentAmount * (1 - marginDecimal));
+
+            const note = {
+                id: Date.now(),
+                datetime: getCurrentDateTime(),
+                stock: stockText,
+                current: currentPrice,
+                target: targetPrice,
+                marginRatio: marginRatio,
+                investmentAmount: investmentAmount,
+                availableToInvest: availableToInvest,
+                percentage: percentage
+            };
+
+            notes.push(note);
+            renderNotes();
+            
+            // Clear inputs
+            stockSelect.value = '';
+            currentInput.value = '';
+            targetInput.value = '';
+            investmentInput.value = '';
+            percentageInput.value = '';
+            percentageInput.style.color = '#333';
+            percentageInput.style.fontWeight = 'normal';
+            
+            showStatus('Stock added successfully!', 'success');
+        }
+
+        function renderNotes() {
+            const tbody = document.getElementById('notesTable');
+            tbody.innerHTML = '';
+
+            notes.forEach(note => {
+                const percentageChange = note.percentage || ((note.target - note.current) / note.current * 100);
+                const percentageClass = percentageChange >= 0 ? 'up-percentage' : 'down-percentage';
+                const percentageSymbol = percentageChange >= 0 ? '↗' : '↘';
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${note.datetime}</td>
+                    <td><strong>${note.stock}</strong></td>
+                    <td>${formatNumber(note.current)}</td>
+                    <td class="target-cell">${formatNumber(note.target)}</td>
+                    <td class="${percentageClass}">${percentageSymbol} ${Math.abs(percentageChange).toFixed(2)}%</td>
+                    <td class="margin-cell">${note.marginRatio}%</td>
+                    <td class="available-cell">${formatInvestmentAmount(note.availableToInvest)}</td>
+                    <td><button class="delete-btn" onclick="deleteNote(${note.id})">Delete</button></td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            updateTotalCount();
+        }
+
+        function updateTotalCount() {
+            document.getElementById('totalCount').textContent = notes.length;
+        }
+
+        function deleteNote(id) {
+            notes = notes.filter(note => note.id !== id);
+            renderNotes();
+            showStatus('Stock deleted successfully!', 'success');
+        }
+
+        // Sorting Functions
+        function sortBy(field) {
+            document.querySelectorAll('.sort-btn').forEach(btn => btn.classList.remove('active'));
+            
+            if (currentSort === field) {
+                sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                sortDirection = 'asc';
+                currentSort = field;
+            }
+
+            const btnId = field === 'stock' ? 'sortStock' : 
+                         field === 'percentage' ? 'sortPercentage' : 'sortAvailable';
+            document.getElementById(btnId).classList.add('active');
+            
+            const arrow = sortDirection === 'asc' ? '↑' : '↓';
+            const buttonText = field === 'stock' ? 'Stock' : 
+                              field === 'percentage' ? '% Change' : 'Available';
+            document.getElementById(btnId).textContent = `${buttonText} ${arrow}`;
+
+            notes.sort((a, b) => {
+                let valueA, valueB;
+                
+                if (field === 'stock') {
+                    valueA = a.stock.toLowerCase();
+                    valueB = b.stock.toLowerCase();
+                } else if (field === 'percentage') {
+                    valueA = a.percentage || ((a.target - a.current) / a.current * 100);
+                    valueB = b.percentage || ((b.target - b.current) / b.current * 100);
+                } else if (field === 'available') {
+                    valueA = a.availableToInvest || 0;
+                    valueB = b.availableToInvest || 0;
+                }
+
+                if (sortDirection === 'asc') {
+                    return valueA < valueB ? -1 : valueA > valueB ? 1 : 0;
+                } else {
+                    return valueA > valueB ? -1 : valueA < valueB ? 1 : 0;
+                }
+            });
+
+            renderNotes();
+        }
+
+        // Data Management Functions
+        function saveData() {
+            const dataStr = JSON.stringify({
+                notes: notes,
+                stockOptions: stockOptions
+            }, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(dataBlob);
+            link.download = `stock_calculator_notes_${new Date().toISOString().slice(0, 10)}.json`;
+            link.click();
+            
+            showStatus('Data saved successfully!', 'success');
+        }
+
+        function uploadData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    
+                    // Handle different data formats for backward compatibility
+                    if (data.notes && Array.isArray(data.notes)) {
+                        notes = data.notes.map(note => ({
+                            ...note,
+                            marginRatio: note.marginRatio || 20,
+                            investmentAmount: note.investmentAmount || 0,
+                            availableToInvest: note.availableToInvest || 0,
+                            percentage: note.percentage || ((note.target - note.current) / note.current * 100)
+                        }));
+                    } else if (Array.isArray(data)) {
+                        // Handle old format
+                        notes = data.map(note => ({
+                            ...note,
+                            marginRatio: note.marginRatio || 20,
+                            investmentAmount: note.investmentAmount || 0,
+                            availableToInvest: note.availableToInvest || 0,
+                            percentage: note.percentage || ((note.target - note.current) / note.current * 100)
+                        }));
+                    }
+                    
+                    if (data.stockOptions && Array.isArray(data.stockOptions)) {
+                        stockOptions = data.stockOptions;
+                        updateStockDropdown();
+                    }
+                    
+                    renderNotes();
+                    showStatus('Data uploaded successfully!', 'success');
+                } catch (error) {
+                    showStatus('Error reading file!', 'error');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function clearAll() {
+            if (confirm('Are you sure you want to clear all records?')) {
+                notes = [];
+                renderNotes();
+                showStatus('All records cleared!', 'success');
+            }
+        }
+
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('statusMessage');
+            statusDiv.textContent = message;
+            statusDiv.className = `status-message ${type} show`;
+            
+            setTimeout(() => {
+                statusDiv.classList.remove('show');
+            }, 3000);
+        }
+
+        // Event Listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            // Calculator inputs
+            ['price1', 'price2', 'volume1', 'volume2'].forEach(id => {
+                document.getElementById(id).addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        calculateWeightedAverage();
+                    }
+                });
+            });
+
+            // Notes inputs
+            ['currentInput', 'targetInput'].forEach(id => {
+                document.getElementById(id).addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        addNote();
+                    }
+                });
+            });
+
+            // Custom stock input
+            document.getElementById('customStock').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    addNewStock();
+                }
+            });
+
+            // Investment amount formatting
+            document.getElementById('investmentInput').addEventListener('blur', function() {
+                formatInvestmentInput(this);
+                calculateAvailable();
+            });
+
+            showStatus('Welcome! Calculate weighted averages and manage your stock notes.', 'success');
+        });
+    </script>
+</body>
+</html>
