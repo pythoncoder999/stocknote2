@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stock Notes App</title>
+    <title>Stock Calculator & Notes App</title>
     <style>
         * {
             margin: 0;
@@ -39,7 +39,102 @@
             background-clip: text;
         }
 
-        .input-section {
+        .calculator-section {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            border: 2px solid rgba(102, 126, 234, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .calculator-section:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .calculator-title {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .calculator-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .series-box {
+            padding: 20px;
+            border-radius: 12px;
+            border: 2px solid;
+        }
+
+        .series-1 {
+            background: rgba(59, 130, 246, 0.1);
+            border-color: rgba(59, 130, 246, 0.3);
+        }
+
+        .series-2 {
+            background: rgba(34, 197, 94, 0.1);
+            border-color: rgba(34, 197, 94, 0.3);
+        }
+
+        .series-title {
+            font-weight: 600;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+        }
+
+        .result-box {
+            background: linear-gradient(45deg, rgba(147, 51, 234, 0.1), rgba(219, 39, 119, 0.1));
+            border: 2px solid rgba(147, 51, 234, 0.2);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .weighted-avg-price {
+            font-size: 2em;
+            font-weight: bold;
+            color: #8b5cf6;
+            margin: 10px 0;
+        }
+
+        .transfer-section {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .transfer-btn {
+            background: linear-gradient(45deg, #8b5cf6, #ec4899);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .transfer-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(139, 92, 246, 0.4);
+        }
+
+        .transfer-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .notes-section {
             background: rgba(255, 255, 255, 0.8);
             padding: 25px;
             border-radius: 15px;
@@ -48,17 +143,23 @@
             transition: all 0.3s ease;
         }
 
-        .input-section:hover {
+        .notes-section:hover {
             transform: translateY(-2px);
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
         }
 
+        .notes-title {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
         .input-row {
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 15px;
-            margin-bottom: 15px;
-            align-items: end;
+            margin-bottom: 20px;
         }
 
         .input-group {
@@ -88,7 +189,11 @@
             transform: scale(1.02);
         }
 
-        .target-input, .available-input {
+        .calculator-input {
+            font-family: 'Courier New', monospace;
+        }
+
+        .target-input, .percentage-input {
             background: linear-gradient(45deg, #f8f9fa, #e9ecef);
             font-weight: 600;
         }
@@ -103,8 +208,93 @@
             font-weight: 600;
         }
 
-        select {
+        .dropdown-container {
+            position: relative;
+        }
+
+        .add-new-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
             cursor: pointer;
+            margin-top: 5px;
+            width: 100%;
+        }
+
+        .add-new-btn:hover {
+            background: #218838;
+        }
+
+        .manage-btn {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            margin-top: 5px;
+            width: 100%;
+        }
+
+        .manage-btn:hover {
+            background: #545b62;
+        }
+
+        .dropdown-manager {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+
+        .dropdown-manager h4 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            color: #495057;
+        }
+
+        .dropdown-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 15px;
+            padding: 4px 8px;
+            font-size: 12px;
+        }
+
+        .dropdown-item span {
+            margin-right: 5px;
+        }
+
+        .remove-item-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            font-size: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+        }
+
+        .remove-item-btn:hover {
+            background: #c82333;
         }
 
         .button-group {
@@ -247,16 +437,16 @@
         th {
             background: linear-gradient(45deg, #667eea, #764ba2);
             color: white;
-            padding: 20px 12px;
+            padding: 15px 10px;
             text-align: left;
             font-weight: 600;
-            font-size: 14px;
+            font-size: 13px;
             text-transform: uppercase;
             letter-spacing: 1px;
         }
 
         td {
-            padding: 15px 12px;
+            padding: 12px 10px;
             border-bottom: 1px solid #e1e5e9;
             transition: background-color 0.3s ease;
         }
@@ -273,7 +463,7 @@
             background: linear-gradient(45deg, #ff4757, #ff3838);
             color: white;
             border: none;
-            padding: 8px 12px;
+            padding: 6px 12px;
             border-radius: 6px;
             cursor: pointer;
             font-size: 12px;
@@ -354,8 +544,7 @@
 
         @media (max-width: 1200px) {
             .input-row {
-                grid-template-columns: 1fr 1fr 1fr;
-                gap: 10px;
+                grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
             }
         }
 
@@ -365,9 +554,12 @@
                 margin: 10px;
             }
 
+            .calculator-grid {
+                grid-template-columns: 1fr;
+            }
+
             .input-row {
                 grid-template-columns: 1fr;
-                gap: 10px;
             }
 
             .button-group {
@@ -384,37 +576,107 @@
             }
 
             table {
-                font-size: 14px;
+                font-size: 12px;
             }
 
             th, td {
-                padding: 12px 6px;
+                padding: 8px 4px;
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>📈 Stock Notes</h1>
+        <h1>📈 Stock Calculator & Notes</h1>
         
-        <div class="input-section">
+        <!-- Volume Weighted Average Calculator -->
+        <div class="calculator-section">
+            <h2 class="calculator-title">💹 Volume Weighted Average Calculator</h2>
+            
+            <div class="calculator-grid">
+                <div class="series-box series-1">
+                    <h3 class="series-title">Series 1</h3>
+                    <div class="input-group">
+                        <label>Price 1 ($)</label>
+                        <input type="text" id="price1" class="calculator-input" placeholder="0.00" oninput="calculateWeightedAverage()">
+                    </div>
+                    <div class="input-group">
+                        <label>Volume 1 (units)</label>
+                        <input type="text" id="volume1" class="calculator-input" placeholder="0" oninput="handleVolumeInput(this); calculateWeightedAverage()">
+                    </div>
+                </div>
+
+                <div class="series-box series-2">
+                    <h3 class="series-title">Series 2</h3>
+                    <div class="input-group">
+                        <label>Price 2 ($)</label>
+                        <input type="text" id="price2" class="calculator-input" placeholder="0.00" oninput="calculateWeightedAverage()">
+                    </div>
+                    <div class="input-group">
+                        <label>Volume 2 (units)</label>
+                        <input type="text" id="volume2" class="calculator-input" placeholder="0" oninput="handleVolumeInput(this); calculateWeightedAverage()">
+                    </div>
+                </div>
+            </div>
+
+            <div class="result-box" id="resultBox" style="display: none;">
+                <div style="font-size: 1.2em; margin-bottom: 10px;">Volume Weighted Average Price:</div>
+                <div class="weighted-avg-price" id="weightedAverageResult">$0.0000</div>
+                <div style="font-size: 0.9em; color: #666; margin-top: 10px;">
+                    <div>Total Value: $<span id="totalValue">0</span></div>
+                    <div>Total Volume: <span id="totalVolume">0</span> units</div>
+                </div>
+            </div>
+
+            <div class="transfer-section">
+                <button class="transfer-btn" onclick="transferToTarget()" id="transferBtn" disabled>
+                    📤 Transfer to Target Price
+                </button>
+            </div>
+        </div>
+
+        <!-- Stock Notes Section -->
+        <div class="notes-section">
+            <h2 class="notes-title">📊 Stock Notes</h2>
+            
             <div class="input-row">
                 <div class="input-group">
-                    <label for="stockInput">Stock:</label>
-                    <input type="text" id="stockInput" placeholder="Stock name or symbol..." />
+                    <label for="stockSelect">Stock:</label>
+                    <div class="dropdown-container">
+                        <select id="stockSelect" onchange="checkCustomStock()">
+                            <option value="">Select stock...</option>
+                            <option value="AAPL">AAPL</option>
+                            <option value="GOOGL">GOOGL</option>
+                            <option value="MSFT">MSFT</option>
+                            <option value="AMZN">AMZN</option>
+                            <option value="TSLA">TSLA</option>
+                            <option value="CUSTOM">+ Add New Stock</option>
+                        </select>
+                        <input type="text" id="customStock" placeholder="Enter new stock..." style="display: none; margin-top: 5px;">
+                        <button class="add-new-btn" id="addStockBtn" onclick="addNewStock()" style="display: none;">Add Stock</button>
+                        <button class="manage-btn" onclick="toggleStockManager()">Manage Stocks</button>
+                        <div id="stockManager" class="dropdown-manager" style="display: none;">
+                            <h4>Current Stocks:</h4>
+                            <div id="stockItems" class="dropdown-items"></div>
+                        </div>
+                    </div>
                 </div>
+                
                 <div class="input-group">
                     <label for="ratioInput">Ratio:</label>
                     <input type="text" id="ratioInput" placeholder="P/E, P/B, etc..." />
                 </div>
+                
                 <div class="input-group">
                     <label for="currentInput">Current Price:</label>
-                    <input type="number" id="currentInput" placeholder="0.00" step="0.01" />
+                    <input type="number" id="currentInput" placeholder="0.00" step="0.01" oninput="updateTargetCalculation(); calculatePercentageChange()" />
                 </div>
+                
                 <div class="input-group">
                     <label for="targetInput">Target:</label>
-                    <input type="number" id="targetInput" class="target-input" placeholder="Auto-calculated" readonly />
+                    <input type="number" id="targetInput" class="target-input" placeholder="Auto-calculated" oninput="calculatePercentageChange()" />
                 </div>
+                
                 <div class="input-group">
                     <label for="marginSelect">Margin Ratio:</label>
                     <select id="marginSelect" class="margin-select">
@@ -424,9 +686,15 @@
                         <option value="100">100%</option>
                     </select>
                 </div>
+                
                 <div class="input-group">
                     <label for="investmentInput">Investment Amount:</label>
                     <input type="text" id="investmentInput" class="investment-input" placeholder="0" />
+                </div>
+                
+                <div class="input-group">
+                    <label for="percentageInput">Up/Down % (Auto):</label>
+                    <input type="number" id="percentageInput" class="percentage-input" placeholder="Auto-calculated..." readonly />
                 </div>
             </div>
             
@@ -451,7 +719,7 @@
                 <button class="sort-btn" onclick="sortBy('available')" id="sortAvailable">Available ↕</button>
             </div>
             <div style="font-weight: 600; color: #555;">
-                Total Stocks: <span id="totalCount">0</span>
+                Total Records: <span id="totalCount">0</span>
             </div>
         </div>
 
@@ -472,7 +740,7 @@
                     </tr>
                 </thead>
                 <tbody id="notesTable">
-                    <!-- Notes will be added here -->
+                    <!-- Records will be added here -->
                 </tbody>
             </table>
         </div>
@@ -480,9 +748,12 @@
 
     <script>
         let notes = [];
+        let stockOptions = ['AAPL', 'GOOGL', 'MSFT', 'AMZN', 'TSLA'];
         let currentSort = null;
         let sortDirection = 'asc';
+        let currentWeightedAverage = 0;
 
+        // Utility Functions
         function getCurrentDateTime() {
             const now = new Date();
             return now.toLocaleString('en-US', {
@@ -510,7 +781,6 @@
         }
 
         function parseInvestmentInput(value) {
-            // Remove dollar sign, commas, and spaces
             return parseFloat(value.replace(/[$,\s]/g, '')) || 0;
         }
 
@@ -523,294 +793,95 @@
             }
         }
 
-        function calculateTarget(current, ratio) {
-            if (!current || !ratio) return 0;
-            
-            // Simple calculation: assume ratio represents a multiplier
-            // This can be customized based on specific needs
-            const ratioNum = parseFloat(ratio) || 1;
-            
-            // Example calculation: target = current * (1 + ratio/100)
-            // You can modify this formula based on your requirements
-            if (ratioNum > 0 && ratioNum < 1) {
-                // If ratio is less than 1, treat as percentage
-                return current * (1 + ratioNum);
-            } else if (ratioNum >= 1 && ratioNum <= 10) {
-                // If ratio is between 1-10, treat as multiplier
-                return current * ratioNum;
+        function parseNumber(str) {
+            if (!str) return 0;
+            return parseFloat(str.replace(/,/g, '')) || 0;
+        }
+
+        function formatNumberWithCommas(num) {
+            if (!num) return '';
+            const cleanNum = num.toString().replace(/[^\d.]/g, '');
+            const parts = cleanNum.split('.');
+            parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+            return parts.join('.');
+        }
+
+        // Calculator Functions
+        function handleVolumeInput(input) {
+            const value = input.value.replace(/[^\d]/g, '');
+            input.value = value ? formatNumberWithCommas(value) : '';
+        }
+
+        function calculateWeightedAverage() {
+            const p1 = parseNumber(document.getElementById('price1').value);
+            const v1 = parseNumber(document.getElementById('volume1').value);
+            const p2 = parseNumber(document.getElementById('price2').value);
+            const v2 = parseNumber(document.getElementById('volume2').value);
+
+            const resultBox = document.getElementById('resultBox');
+            const transferBtn = document.getElementById('transferBtn');
+
+            if (p1 > 0 && v1 > 0 && p2 > 0 && v2 > 0) {
+                const totalValue = (p1 * v1) + (p2 * v2);
+                const totalVolume = v1 + v2;
+                const weightedAverage = totalValue / totalVolume;
+
+                currentWeightedAverage = weightedAverage;
+
+                document.getElementById('weightedAverageResult').textContent = `$${weightedAverage.toFixed(4)}`;
+                document.getElementById('totalValue').textContent = totalValue.toLocaleString();
+                document.getElementById('totalVolume').textContent = totalVolume.toLocaleString();
+
+                resultBox.style.display = 'block';
+                transferBtn.disabled = false;
             } else {
-                // For larger numbers, treat as percentage
-                return current * (1 + ratioNum / 100);
+                resultBox.style.display = 'none';
+                transferBtn.disabled = true;
+                currentWeightedAverage = 0;
             }
         }
 
-        function calculatePercentageChange(current, target) {
-            if (!current || !target) return 0;
-            return ((target - current) / current * 100);
+        function transferToTarget() {
+            if (currentWeightedAverage > 0) {
+                document.getElementById('targetInput').value = currentWeightedAverage.toFixed(4);
+                calculatePercentageChange();
+                showStatus('Weighted average transferred to target price!', 'success');
+                document.querySelector('.notes-section').scrollIntoView({ behavior: 'smooth' });
+            }
         }
 
-        function calculateAvailableToInvest(investmentAmount, marginRatio) {
-            if (!investmentAmount || !marginRatio) return 0;
-            const marginDecimal = marginRatio / 100;
-            return investmentAmount * (1 - marginDecimal);
-        }
+        // Stock Management Functions
+        function checkCustomStock() {
+            const select = document.getElementById('stockSelect');
+            const customInput = document.getElementById('customStock');
+            const addBtn = document.getElementById('addStockBtn');
 
-        function updateTargetCalculation() {
-            const currentInput = document.getElementById('currentInput');
-            const ratioInput = document.getElementById('ratioInput');
-            const targetInput = document.getElementById('targetInput');
-            
-            const current = parseFloat(currentInput.value) || 0;
-            const ratio = ratioInput.value.trim();
-            
-            if (current > 0 && ratio) {
-                const ratioNum = parseFloat(ratio.replace(/[^\d.-]/g, '')) || 0;
-                const target = calculateTarget(current, ratioNum);
-                targetInput.value = target.toFixed(2);
+            if (select.value === 'CUSTOM') {
+                customInput.style.display = 'block';
+                addBtn.style.display = 'block';
+                customInput.focus();
             } else {
-                targetInput.value = '';
+                customInput.style.display = 'none';
+                addBtn.style.display = 'none';
             }
         }
 
-        function addNote() {
-            const stockInput = document.getElementById('stockInput');
-            const ratioInput = document.getElementById('ratioInput');
-            const currentInput = document.getElementById('currentInput');
-            const targetInput = document.getElementById('targetInput');
-            const marginSelect = document.getElementById('marginSelect');
-            const investmentInput = document.getElementById('investmentInput');
-            
-            const stockText = stockInput.value.trim();
-            const ratioText = ratioInput.value.trim();
-            const currentPrice = parseFloat(currentInput.value) || 0;
-            const targetPrice = parseFloat(targetInput.value) || 0;
-            const marginRatio = parseInt(marginSelect.value);
-            const investmentAmount = parseInvestmentInput(investmentInput.value);
-            
-            if (!stockText) {
-                showStatus('Please enter a stock name!', 'error');
-                return;
-            }
+        function addNewStock() {
+            const customInput = document.getElementById('customStock');
+            const select = document.getElementById('stockSelect');
+            const newStock = customInput.value.trim().toUpperCase();
 
-            if (!ratioText) {
-                showStatus('Please enter a ratio!', 'error');
-                return;
-            }
-
-            if (currentPrice <= 0) {
-                showStatus('Please enter a valid current price!', 'error');
-                return;
-            }
-
-            if (investmentAmount <= 0) {
-                showStatus('Please enter a valid investment amount!', 'error');
-                return;
-            }
-
-            const note = {
-                id: Date.now(),
-                datetime: getCurrentDateTime(),
-                stock: stockText,
-                ratio: ratioText,
-                current: currentPrice,
-                target: targetPrice || calculateTarget(currentPrice, parseFloat(ratioText.replace(/[^\d.-]/g, '')) || 0),
-                marginRatio: marginRatio,
-                investmentAmount: investmentAmount,
-                availableToInvest: calculateAvailableToInvest(investmentAmount, marginRatio)
-            };
-
-            notes.push(note);
-            renderNotes();
-            
-            // Clear inputs
-            stockInput.value = '';
-            ratioInput.value = '';
-            currentInput.value = '';
-            targetInput.value = '';
-            investmentInput.value = '';
-            
-            showStatus('Stock added successfully!', 'success');
-        }
-
-        function renderNotes() {
-            const tbody = document.getElementById('notesTable');
-            tbody.innerHTML = '';
-
-            notes.forEach(note => {
-                const percentageChange = calculatePercentageChange(note.current, note.target);
-                const percentageClass = percentageChange >= 0 ? 'up-percentage' : 'down-percentage';
-                const percentageSymbol = percentageChange >= 0 ? '↗' : '↘';
-                
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${note.datetime}</td>
-                    <td><strong>${note.stock}</strong></td>
-                    <td class="ratio-cell">${note.ratio}</td>
-                    <td>${formatNumber(note.current)}</td>
-                    <td class="target-cell">${formatNumber(note.target)}</td>
-                    <td class="${percentageClass}">${percentageSymbol} ${Math.abs(percentageChange).toFixed(2)}%</td>
-                    <td class="margin-cell">${note.marginRatio}%</td>
-                    <td class="investment-cell">${formatInvestmentAmount(note.investmentAmount)}</td>
-                    <td class="available-cell">${formatInvestmentAmount(note.availableToInvest)}</td>
-                    <td><button class="delete-btn" onclick="deleteNote(${note.id})">Delete</button></td>
-                `;
-                tbody.appendChild(row);
-            });
-
-            updateTotalCount();
-        }
-
-        function updateTotalCount() {
-            document.getElementById('totalCount').textContent = notes.length;
-        }
-
-        function deleteNote(id) {
-            notes = notes.filter(note => note.id !== id);
-            renderNotes();
-            showStatus('Stock deleted successfully!', 'success');
-        }
-
-        function sortBy(field) {
-            // Reset all button styles
-            document.querySelectorAll('.sort-btn').forEach(btn => btn.classList.remove('active'));
-            
-            // Toggle sort direction if same field, otherwise set to ascending
-            if (currentSort === field) {
-                sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
-            } else {
-                sortDirection = 'asc';
-                currentSort = field;
-            }
-
-            // Activate current sort button
-            const btnId = field === 'stock' ? 'sortStock' : 
-                         field === 'ratio' ? 'sortRatio' : 
-                         field === 'percentage' ? 'sortPercentage' : 'sortAvailable';
-            document.getElementById(btnId).classList.add('active');
-            
-            // Update button text with arrow
-            const arrow = sortDirection === 'asc' ? '↑' : '↓';
-            const buttonText = field === 'stock' ? 'Stock' : 
-                              field === 'ratio' ? 'Ratio' : 
-                              field === 'percentage' ? '% Change' : 'Available';
-            document.getElementById(btnId).textContent = `${buttonText} ${arrow}`;
-
-            notes.sort((a, b) => {
-                let valueA, valueB;
-                
-                if (field === 'stock') {
-                    valueA = a.stock.toLowerCase();
-                    valueB = b.stock.toLowerCase();
-                } else if (field === 'ratio') {
-                    // Extract numeric value from ratio for sorting
-                    valueA = parseFloat(a.ratio.replace(/[^\d.-]/g, '')) || 0;
-                    valueB = parseFloat(b.ratio.replace(/[^\d.-]/g, '')) || 0;
-                } else if (field === 'percentage') {
-                    valueA = calculatePercentageChange(a.current, a.target);
-                    valueB = calculatePercentageChange(b.current, b.target);
-                } else if (field === 'available') {
-                    valueA = a.availableToInvest || 0;
-                    valueB = b.availableToInvest || 0;
-                }
-
-                if (sortDirection === 'asc') {
-                    return valueA < valueB ? -1 : valueA > valueB ? 1 : 0;
-                } else {
-                    return valueA > valueB ? -1 : valueA < valueB ? 1 : 0;
-                }
-            });
-
-            renderNotes();
-        }
-
-        function saveData() {
-            const dataStr = JSON.stringify(notes, null, 2);
-            const dataBlob = new Blob([dataStr], { type: 'application/json' });
-            
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(dataBlob);
-            link.download = `stock_notes_${new Date().toISOString().slice(0, 10)}.json`;
-            link.click();
-            
-            showStatus('Data saved successfully!', 'success');
-        }
-
-        function uploadData(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const uploadedNotes = JSON.parse(e.target.result);
-                    if (Array.isArray(uploadedNotes)) {
-                        // Ensure backward compatibility by adding missing fields
-                        notes = uploadedNotes.map(note => ({
-                            ...note,
-                            marginRatio: note.marginRatio || 20,
-                            investmentAmount: note.investmentAmount || 0,
-                            availableToInvest: note.availableToInvest || 0
-                        }));
-                        renderNotes();
-                        showStatus('Data uploaded successfully!', 'success');
-                    } else {
-                        showStatus('Invalid file format!', 'error');
-                    }
-                } catch (error) {
-                    showStatus('Error reading file!', 'error');
-                }
-            };
-            reader.readAsText(file);
-        }
-
-        function clearAll() {
-            if (confirm('Are you sure you want to clear all stocks?')) {
-                notes = [];
-                renderNotes();
-                showStatus('All stocks cleared!', 'success');
+            if (newStock && !stockOptions.includes(newStock)) {
+                stockOptions.push(newStock);
+                updateStockDropdown();
+                select.value = newStock;
+                customInput.style.display = 'none';
+                document.getElementById('addStockBtn').style.display = 'none';
+                customInput.value = '';
+                updateStockManager();
+                showStatus(`Stock "${newStock}" added successfully!`, 'success');
             }
         }
 
-        function showStatus(message, type) {
-            const statusDiv = document.getElementById('statusMessage');
-            statusDiv.textContent = message;
-            statusDiv.className = `status-message ${type} show`;
-            
-            setTimeout(() => {
-                statusDiv.classList.remove('show');
-            }, 3000);
-        }
-
-        // Add event listeners for auto-calculation
-        document.getElementById('currentInput').addEventListener('input', updateTargetCalculation);
-        document.getElementById('ratioInput').addEventListener('input', updateTargetCalculation);
-
-        // Add event listener for investment amount formatting
-        document.getElementById('investmentInput').addEventListener('blur', function() {
-            formatInvestmentInput(this);
-        });
-
-        // Allow Enter key to add note
-        document.getElementById('stockInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') addNote();
-        });
-
-        document.getElementById('ratioInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') addNote();
-        });
-
-        document.getElementById('currentInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') addNote();
-        });
-
-        document.getElementById('investmentInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') addNote();
-        });
-
-        // Initialize
-        window.onload = function() {
-            showStatus('Welcome! Start adding your stock notes with margin calculations.', 'success');
-        };
-    </script>
-</body>
-</html>
+        function toggleStockManager() {
+            const manager = document.getElementById('stockManager');
